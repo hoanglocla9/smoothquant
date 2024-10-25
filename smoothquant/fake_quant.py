@@ -44,6 +44,8 @@ def quantize_activation_per_tensor_absmax(t, n_bits=8):
     t.div_(scales).round_().mul_(scales)
     return t
 
+def get_x(x):
+    return x 
 
 class W8A8Linear(nn.Module):
     def __init__(
@@ -91,7 +93,7 @@ class W8A8Linear(nn.Module):
             self.output_quant = self.act_quant
         else:
             self.output_quant_name = "None"
-            self.output_quant = lambda x: x
+            self.output_quant = get_x
 
     def to(self, *args, **kwargs):
         super(W8A8Linear, self).to(*args, **kwargs)

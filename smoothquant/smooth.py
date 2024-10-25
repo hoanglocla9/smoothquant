@@ -4,14 +4,14 @@ import torch.nn as nn
 from transformers.models.opt.modeling_opt import OPTDecoderLayer
 from transformers.models.bloom.modeling_bloom import BloomBlock
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer, LlamaRMSNorm
-from transformers.models.mistral.modeling_mistral import (
-    MistralDecoderLayer,
-    MistralRMSNorm,
-)
-from transformers.models.mixtral.modeling_mixtral import (
-    MixtralDecoderLayer,
-    MixtralRMSNorm,
-)
+#from transformers.models.mistral.modeling_mistral import (
+ #   MistralDecoderLayer,
+ #   MistralRMSNorm,
+#)
+#from transformers.models.mixtral.modeling_mixtral import (
+#    MixtralDecoderLayer,
+#    MixtralRMSNorm,
+#)
 from transformers.models.falcon.modeling_falcon import FalconDecoderLayer
 
 
@@ -49,7 +49,7 @@ def smooth_ln_fcs(ln, fcs, act_scales, alpha=0.5):
 def smooth_ln_fcs_llama_like(ln, fcs, act_scales, alpha=0.5):
     if not isinstance(fcs, list):
         fcs = [fcs]
-    assert isinstance(ln, (LlamaRMSNorm, MistralRMSNorm, MixtralRMSNorm))
+    #assert isinstance(ln, (LlamaRMSNorm, MistralRMSNorm, MixtralRMSNorm))
     for fc in fcs:
         assert isinstance(fc, nn.Linear)
         assert ln.weight.numel() == fc.in_features == act_scales.numel()
@@ -123,7 +123,8 @@ def smooth_lm(model, scales, alpha=0.5):
                 )
                 smooth_ln_fcs(attn_ln, qkv, qkv_input_scales, alpha)
                 smooth_ln_fcs(ffn_ln, fc1, fc1_input_scales, alpha)
-        elif isinstance(module, (LlamaDecoderLayer, MistralDecoderLayer)):
+        
+        elif isinstance(module, (LlamaDecoderLayer)):
             attn_ln = module.input_layernorm  # attention forward norm
             qkv = [
                 module.self_attn.q_proj,
@@ -139,22 +140,22 @@ def smooth_lm(model, scales, alpha=0.5):
             fcs_input_scales = scales[name + ".mlp.gate_proj"]
 
             smooth_ln_fcs_llama_like(ffn_ln, fcs, fcs_input_scales, alpha)
-        elif isinstance(module, MixtralDecoderLayer):
-            attn_ln = module.input_layernorm  # attention forward norm
-            qkv = [
-                module.self_attn.q_proj,
-                module.self_attn.k_proj,
-                module.self_attn.v_proj,
-            ]
+        #elif isinstance(module, MixtralDecoderLayer):
+        #    attn_ln = module.input_layernorm  # attention forward norm
+        #    qkv = [
+        #        module.self_attn.q_proj,
+        #        module.self_attn.k_proj,
+        #        module.self_attn.v_proj,
+        #    ]
 
-            qkv_input_scales = scales[name + ".self_attn.q_proj"]
-            smooth_ln_fcs_llama_like(attn_ln, qkv, qkv_input_scales, alpha)
+          #  qkv_input_scales = scales[name + ".self_attn.q_proj"]
+          #  smooth_ln_fcs_llama_like(attn_ln, qkv, qkv_input_scales, alpha)
 
-            ffn_ln = module.post_attention_layernorm  # feed forward norm
-            fcs = [module.block_sparse_moe.gate]
-            for expert in module.block_sparse_moe.experts:
-                fcs.append(expert.w1)
-                fcs.append(expert.w3)
-            fcs_input_scales = scales[name + ".block_sparse_moe.gate"]
+#            ffn_ln = module.post_attention_layernorm  # feed forward norm
+#            fcs = [module.block_sparse_moe.gate]
+#            for expert in module.block_sparse_moe.experts:
+#                fcs.append(expert.w1)
+#                fcs.append(expert.w3)
+#            fcs_input_scales = scales[name + ".block_sparse_moe.gate"]
 
-            smooth_ln_fcs_llama_like(ffn_ln, fcs, fcs_input_scales, alpha)
+#            smooth_ln_fcs_llama_like(ffn_ln, fcs, fcs_input_scales, alpha)
